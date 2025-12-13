@@ -5,6 +5,11 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { register, login } = require("../controllers/authController");
 
+// Route test GET pour vérifier si le serveur répond
+router.get("/", (req, res) => {
+  res.send("Auth API is working!");
+});
+
 // Routes normales
 router.post("/register", register);
 router.post("/login", login);
