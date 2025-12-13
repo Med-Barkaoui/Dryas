@@ -11,7 +11,7 @@ router.post("/login", login);
 
 // GOOGLE OAUTH
 router.get("/google", (req, res) => {
-  const redirect_uri = "https://dryas.onrender.com/api/auth/google/callback";
+  const redirect_uri = `${process.env.BACKEND_URL}/api/auth/google/callback`;
   const client_id = process.env.GOOGLE_CLIENT_ID;
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=openid%20email%20profile`;
@@ -21,7 +21,7 @@ router.get("/google", (req, res) => {
 
 router.get("/google/callback", async (req, res) => {
   const code = req.query.code;
-  const redirect_uri = "https://dryas.onrender.com/api/auth/google/callback";
+  const redirect_uri = `${process.env.BACKEND_URL}/api/auth/google/callback`;
 
   try {
     const { data } = await axios.post(
@@ -49,12 +49,13 @@ router.get("/google/callback", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-    res.redirect(`https://dryas.vercel.app/login?token=${token}`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
   } catch (error) {
     console.error(error);
     res.status(500).json({ msg: "Erreur dans OAuth Google" });
   }
 });
+
 
 // Vérification du token
 router.get("/check-token", async (req, res) => {
