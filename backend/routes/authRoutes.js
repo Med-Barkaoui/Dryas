@@ -11,7 +11,7 @@ router.post("/login", login);
 
 // GOOGLE OAUTH
 router.get("/google", (req, res) => {
-  const redirect_uri = `${process.env.BACKEND_URL}/api/auth/google/callback`;
+  const redirect_uri = process.env.GOOGLE_REDIRECT_URI;
   const client_id = process.env.GOOGLE_CLIENT_ID;
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=openid%20email%20profile`;
