@@ -14,6 +14,10 @@ app.use(cors({
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.status(200).send("✅ Dryas backend is running");
+});
+
 // Connexion MongoDB
 connectDB();
 // Ajouter cette route
