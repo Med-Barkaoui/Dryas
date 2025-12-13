@@ -48,7 +48,7 @@ export default function Login() {
   // Google OAuth
   const googleLogin = () => {
     setIsGoogleLoading(true);
-    window.location.href = "http://localhost:5000/api/auth/google";
+    window.location.href = `${process.env.REACT_APP_API_URL}/api/auth/google`;
   };
 
   const handleKeyPress = (e) => {
