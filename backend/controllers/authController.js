@@ -1,52 +1,48 @@
 const User = require("../models/User");
-const bcrypt = require("bcrypt");
-const sendEmail = require("../utils/sendEmail");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-// Register
+// REGISTER
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, birth } = req.body;
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ msg: "Email exists" });
+    const { email, password, birth } = req.body;
+    if (!email || !password) return res.status(400).json({ msg: "Email et password requis" });
 
-    const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed, birth });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ msg: "Utilisateur déjà existant" });
 
-    // Générer code MFA
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    user.mfaCode = code;
-    user.mfaExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-    await user.save();
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    sendEmail(email, "Dryas Verification Code", `Votre code est : ${code}`);
-    res.json({ msg: "Account created. Check your email for MFA code." });
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      birth,
+    });
 
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.status(201).json({ msg: "Utilisateur créé", token, user: { id: newUser._id, email } });
   } catch (err) {
-    console.error("Erreur register:", err);
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Erreur serveur lors de l'inscription" });
   }
 };
 
-// Login
+// LOGIN
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ msg: "Email et password requis" });
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (!user) return res.status(404).json({ msg: "Utilisateur non trouvé" });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ msg: "Wrong password" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).json({ msg: "Mot de passe incorrect" });
 
-    // Générer code MFA
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    user.mfaCode = code;
-    user.mfaExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
-    await user.save();
-
-    sendEmail(email, "Dryas Login Code", `Votre code est : ${code}`);
-    res.json({ msg: "MFA sent" });
-
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.json({ msg: "Connexion réussie", token, user: { id: user._id, email } });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Erreur serveur lors de la connexion" });
   }
 };
